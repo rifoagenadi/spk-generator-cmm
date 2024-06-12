@@ -26,20 +26,29 @@ def get_prioritized_tasks(parts, top_n=50):
     # decompose to tasks
     sorted_tasks = []
     for part in sorted_parts:
-        neccesity = part.ideal_stock_3hk - part.processes[-1].stock
-        initial_necessity = neccesity
-        if neccesity < 0:
-            break
-        for i, process in enumerate(part.processes[::-1]): # iterate from last process to first process
-            op_id = len(part.processes) - i
-            if i == len(part.processes)-1: # if first process
-                quantity = min(neccesity, material_stock[part.material])
+        initial_necessity = part.ideal_stock_3hk - part.processes[-1].stock
+        current_necessity = part.ideal_stock_3hk
+        
+        # first pass: count quantity for each process
+        neccesities = [0] * len(part.processes)
+        for i, process in enumerate(part.processes[::-1]):
+            current_necessity = current_necessity - process.stock
+            neccesities[len(part.processes)-1-i] = current_necessity
+
+        # second pass: count actual quantity (compared to available material or WIP stock)
+        prev_stock = material_stock[part.material]
+        for i, process in enumerate(part.processes):
+            current_necessity = neccesities[i]
+            if i == 0:
+                if material_stock[part.material] <= 0:
+                    continue
+                quantity = min(current_necessity, prev_stock)
+                material_stock[part.material] -= quantity
             else:
-                prev_step_stock = part.processes[i+1].stock
-                quantity = neccesity if neccesity <=  prev_step_stock else min(process.stock, get_max_capacity(process.tonnage))
-                neccesity -= quantity
-            
+                quantity = min(current_necessity, prev_stock)
+            prev_stock = process.stock + quantity
             if quantity > 0:
+                op_id = i+1
                 current_task = Task(part_name=part.name,
                                     process_name=process.process_name,
                                     op=f"OP{op_id}0",
@@ -55,7 +64,7 @@ def get_prioritized_tasks(parts, top_n=50):
 
 from constants import machine_tonnages, SHIFT_HOUR
 def assign_task_to_machines(sorted_tasks):
-    max_capacities = [get_max_capacity(t.tonnage) for t in sorted_tasks]
+    max_capacities = [get_max_capacity(m) for m in machine_tonnages]
     current_workload = [0] * len(machine_tonnages)
     are_loaded = [False] * len(machine_tonnages)
     machine_tasks = [[] for _ in range(len(machine_tonnages))]
@@ -77,6 +86,7 @@ def assign_task_to_machines(sorted_tasks):
                     if current_workload[alt_idx] >= max_capacities[alt_idx]:
                         are_loaded[alt_idx] = True
                     machine_tasks[alt_idx].append(task)
+                    break
         
         sorted_tasks.pop(0)
     
