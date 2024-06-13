@@ -20,7 +20,7 @@ df_prioritization = pd.DataFrame({
     "Process Name": [task.process_name for task in sorted_tasks],
     "Quantity": [task.quantity for task in sorted_tasks],
     "Kekurangan": [task.necessity for task in sorted_tasks],
-    "Material Spec Size": [task.material if task.process_name == 'Blank' else '' for task in sorted_tasks]
+    "Material Spec Size": [task.material if task.op == 'OP10' else '' for task in sorted_tasks]
 })
 machine_tasks = assign_task_to_machines(sorted_tasks)
 tasks = [(tonnage_idx, task) for tonnage_idx, tasks_ in enumerate(machine_tasks) for task in tasks_]
@@ -36,7 +36,7 @@ df_tasks = pd.DataFrame({
     "Process Name": [task.process_name for _, task in tasks],
     "OP": [task.op for _, task in tasks],
     "Quantity": [task.quantity for _, task in tasks],
-    "Material Spec Size": [task.material if task.process_name == 'Blank' else '' for _, task in tasks]
+    "Material Spec Size": [task.material if task.op == 'OP10' else '' for _, task in tasks]
 })
 
 
