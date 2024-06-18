@@ -15,16 +15,10 @@ def delete_row(row_idx):
     df_spk = df_spk.drop(row_idx-1)
     return df_spk
 
-def save_spk():
-    from reportlab.lib.pagesizes import letter
-    from reportlab.pdfgen import canvas
-
+def save_spk(df, leader, year, month, day, hour, shift):
+    from spk_templater import create_pdf
     file_path = 'data/spk.pdf'
-    c = canvas.Canvas(file_path, pagesize=letter)
-
-    c.drawString(100, 750, "SPK PT CMM")
-
-    c.save()
+    create_pdf(file_path, df=df, head=leader, yy=year, mm=month, dd=day, workhour=hour, shift=shift)
     gr.Info(f"SPK telah disimpan di {file_path}")
     
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
@@ -52,7 +46,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             delete_button.click(delete_row, inputs=row_to_delete, outputs=spk)
 
         submit_button.render()
-        submit_button.click(save_spk)
+        submit_button.click(save_spk, inputs=[spk, leader, year, month, day, hour, shift])
         
     with gr.Tab("Stok"):
         with gr.Tab("Part"):

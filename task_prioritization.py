@@ -14,12 +14,12 @@ class Task(NamedTuple):
     necessity: int
 
 def get_max_capacity(machine_tonnage):
-    if machine_tonnage <= 150:
-        return 200*SHIFT_HOUR
-    elif machine_tonnage < 300:
-        return 250*SHIFT_HOUR
-    else:
-        return 320*SHIFT_HOUR
+    if machine_tonnage <= 150: # PP
+        return 2800
+    elif machine_tonnage < 300: # MP
+        return 2000
+    else: # LP
+        return 1400 
 
 def get_prioritized_tasks(parts, top_n=50):
     sorted_parts = sorted(parts, key=lambda x: int(x.ideal_stock_3hk) - int(x.processes[-1].stock), reverse=True)

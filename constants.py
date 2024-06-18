@@ -25,3 +25,5 @@ tonnage2name = [
         "PP4-55T B",
         "PP4-55T C"
     ]
+
+MONTH_ID_TO_NAME = ['Jan', 'Feb', "Mar", 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
