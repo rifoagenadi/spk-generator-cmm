@@ -1,6 +1,7 @@
 
 from typing import NamedTuple, List
-from constants import SHIFT_HOUR, material_stock
+from constants import SHIFT_HOUR
+from part import materials
 
 class Task(NamedTuple):
     part_name: str
@@ -21,29 +22,31 @@ def get_max_capacity(machine_tonnage):
         return 320*SHIFT_HOUR
 
 def get_prioritized_tasks(parts, top_n=50):
-    sorted_parts = sorted(parts, key=lambda x: x.ideal_stock_3hk - x.processes[-1].stock, reverse=True)
+    sorted_parts = sorted(parts, key=lambda x: int(x.ideal_stock_3hk) - int(x.processes[-1].stock), reverse=True)
 
     # decompose to tasks
     sorted_tasks = []
     for part in sorted_parts:
-        initial_necessity = part.ideal_stock_3hk - part.processes[-1].stock
+        initial_necessity = int(part.ideal_stock_3hk) - int(part.processes[-1].stock)
         current_necessity = part.ideal_stock_3hk
         
         # first pass: count quantity for each process
         neccesities = [0] * len(part.processes)
         for i, process in enumerate(part.processes[::-1]):
-            current_necessity = current_necessity - process.stock
+            current_necessity = int(current_necessity) - int(process.stock)
             neccesities[len(part.processes)-1-i] = current_necessity
 
         # second pass: count actual quantity (compared to available material or WIP stock)
-        prev_stock = material_stock[part.material]
+        multiplier = part.material_multiplier
+        producible_quantity = int(multiplier * materials[part.material]) if multiplier >= 1 else int(materials[part.material]/multiplier)
+        prev_stock = producible_quantity
         for i, process in enumerate(part.processes):
             current_necessity = neccesities[i]
             if i == 0:
-                if material_stock[part.material] <= 0:
+                if materials[part.material] <= 0:
                     continue
                 quantity = min(current_necessity, prev_stock)
-                material_stock[part.material] -= quantity
+                materials[part.material] -= quantity
             else:
                 quantity = min(current_necessity, prev_stock)
             prev_stock = process.stock + quantity
@@ -91,4 +94,4 @@ def assign_task_to_machines(sorted_tasks):
         sorted_tasks.pop(0)
     
     return machine_tasks
-                
+
