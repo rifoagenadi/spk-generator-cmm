@@ -12,6 +12,7 @@ class Task(NamedTuple):
     tonnage_alternatives: List[int]
     material: str
     necessity: int
+    minimum_production_quantity: int
 
 def get_max_capacity(machine_tonnage):
     if machine_tonnage <= 150: # PP
@@ -21,7 +22,7 @@ def get_max_capacity(machine_tonnage):
     else: # LP
         return 1400 
 
-def get_prioritized_tasks(parts, top_n=50):
+def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
     sorted_parts = sorted(parts, key=lambda x: int(x.ideal_stock_3hk) - int(x.processes[-1].stock), reverse=True)
 
     # decompose to tasks
@@ -36,26 +37,46 @@ def get_prioritized_tasks(parts, top_n=50):
             current_necessity = int(current_necessity) - int(process.stock)
             neccesities[len(part.processes)-1-i] = current_necessity
 
-        # second pass: count actual quantity (compared to available material or WIP stock)
-        multiplier = part.material_multiplier
-        producible_quantity = int(multiplier * materials[part.material]) if multiplier >= 1 else int(materials[part.material]/multiplier)
-        prev_stock = producible_quantity
-        for i, process in enumerate(part.processes):
-            current_necessity = neccesities[i]
-            if i == 0:
-                if materials[part.material] <= 0:
-                    continue
-                quantity = min(current_necessity, prev_stock)
-                materials[part.material] -= quantity
-            else:
-                quantity = min(current_necessity, prev_stock)
-            prev_stock = process.stock + quantity
-            if quantity > 0:
+        if check_material_availability:
+            # second pass: count actual quantity (compared to available material or WIP stock)
+            multiplier = part.material_multiplier
+            producible_quantity = int(multiplier * materials[part.material]) if multiplier >= 1 else int(materials[part.material]/multiplier)
+            prev_stock = producible_quantity
+            for i, process in enumerate(part.processes):
+                current_necessity = neccesities[i]
+                if i == 0:
+                    if materials[part.material] <= 0:
+                        continue
+                    if initial_necessity >= 0:
+                        quantity = max(current_necessity, part.minimum_production_quantity)
+                        quantity = min(quantity, prev_stock)
+                        # quantity = min(current_necessity, prev_stock)
+                    else:
+                        quantity = prev_stock if prev_stock >= part.minimum_production_quantity else 0
+                    materials[part.material] -= int(quantity / multiplier) if multiplier >= 1 else int(quantity*multiplier)
+                else:
+                    quantity = min(current_necessity, prev_stock)
+                prev_stock = process.stock + quantity
+                if quantity > 0:
+                    op_id = i+1
+                    current_task = Task(part_name=part.name,
+                                        process_name=process.process_name,
+                                        op=f"OP{op_id}0",
+                                        quantity=quantity,
+                                        tonnage=process.tonnage,
+                                        tonnage_alternatives=process.tonnage_alternatives,
+                                        material=part.material,
+                                        minimum_production_quantity=part.minimum_production_quantity,
+                                        necessity=initial_necessity)
+                    sorted_tasks.append(current_task)
+        else:
+            for i, process in enumerate(part.processes):
+                current_necessity = neccesities[i]
                 op_id = i+1
                 current_task = Task(part_name=part.name,
                                     process_name=process.process_name,
                                     op=f"OP{op_id}0",
-                                    quantity=quantity,
+                                    quantity=current_necessity,
                                     tonnage=process.tonnage,
                                     tonnage_alternatives=process.tonnage_alternatives,
                                     material=part.material,
@@ -65,33 +86,58 @@ def get_prioritized_tasks(parts, top_n=50):
 
     return sorted_tasks[:top_n]
 
-from constants import machine_tonnages, SHIFT_HOUR
+from constants import machine_tonnages
 def assign_task_to_machines(sorted_tasks):
+    unassigned_tasks = []
     max_capacities = [get_max_capacity(m) for m in machine_tonnages]
     current_workload = [0] * len(machine_tonnages)
     are_loaded = [False] * len(machine_tonnages)
     machine_tasks = [[] for _ in range(len(machine_tonnages))]
     while not all(are_loaded) and sorted_tasks:
         task = sorted_tasks[0]
+        assigned = False
         machine_idx = machine_tonnages.index(task.tonnage)
 
         if not are_loaded[machine_idx]:
-            current_workload[machine_idx] += task.quantity
+            current_workload_plus_this_task = current_workload[machine_idx] + task.quantity
+            if not current_workload_plus_this_task > max_capacities[machine_idx]:
+                current_workload[machine_idx] += task.quantity
+                machine_tasks[machine_idx].append(task)
+                assigned = True
+            else:
+                doable_workload = max_capacities[machine_idx] - current_workload[machine_idx]
+                if doable_workload >= task.minimum_production_quantity:
+                    current_workload[machine_idx] += doable_workload
+                    machine_tasks[machine_idx].append(task)
+                    assigned = True
+
             if current_workload[machine_idx] >= max_capacities[machine_idx]:
                 are_loaded[machine_idx] = True
-            machine_tasks[machine_idx].append(task)
+            
         else:
             for alt in task.tonnage_alternatives:
                 alt_idx = machine_tonnages.index(alt)
 
                 if not are_loaded[alt_idx]:
-                    current_workload[alt_idx] += task.quantity
+                    current_workload_plus_this_task = current_workload[alt_idx] + task.quantity
+                    if not current_workload_plus_this_task > max_capacities[alt_idx]:
+                        current_workload[alt_idx] += task.quantity
+                        machine_tasks[alt_idx].append(task)
+                        assigned = True
+                    else:
+                        doable_workload = max_capacities[alt_idx] - current_workload[alt_idx]
+                        if doable_workload >= task.minimum_production_quantity:
+                            current_workload[alt_idx] += doable_workload
+                            machine_tasks[alt_idx].append(task)
+                            assigned = True
+
                     if current_workload[alt_idx] >= max_capacities[alt_idx]:
                         are_loaded[alt_idx] = True
-                    machine_tasks[alt_idx].append(task)
+                    
                     break
         
+        if not assigned:
+            unassigned_tasks.append(task)
         sorted_tasks.pop(0)
     
-    return machine_tasks
-
+    return machine_tasks, unassigned_tasks

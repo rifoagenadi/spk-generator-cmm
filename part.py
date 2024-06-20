@@ -23,7 +23,7 @@ class Process:
         return f"Process: {self.process_name}, Tonnage: {self.tonnage}, Tonnage Alternatives: {self.tonnage_alternatives}, Stock: {self._stock}"
 
 class Part:
-    def __init__(self, name: str, id: str, customer:str, ideal_stock_3hk: int, material: str, processes: List[Process], material_multiplier: float):
+    def __init__(self, name: str, id: str, customer:str, ideal_stock_3hk: int, material: str, processes: List[Process], material_multiplier: float, minimum_production_quantity: int):
         self.name = name
         self.id = id
         self.customer = customer
@@ -31,6 +31,7 @@ class Part:
         self.material = material
         self.material_multiplier = material_multiplier
         self.processes = processes
+        self.minimum_production_quantity = minimum_production_quantity
         
     def __str__(self):
         processes_str = "\n".join(f"  {process}" for process in self.processes)
@@ -210,13 +211,9 @@ def update_stock(parts, materials, env):
 
         return parts, materials
 
-from task_prioritization import get_prioritized_tasks, assign_task_to_machines
 
-def get_spk_dataframe_display(parts):
+def get_spk_dataframe_display(machine_tasks):
     from constants import tonnage2name
-
-    sorted_tasks = get_prioritized_tasks(parts, top_n=200)
-    machine_tasks = assign_task_to_machines(sorted_tasks)
     tasks = [(tonnage_idx, task) for tonnage_idx, tasks_ in enumerate(machine_tasks) for task in tasks_]
 
     df_tasks = pd.DataFrame({

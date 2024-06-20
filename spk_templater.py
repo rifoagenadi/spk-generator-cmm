@@ -21,7 +21,7 @@ def generate_qr_code(data, filename):
 
 # Create a function to generate the PDF
 from constants import MONTH_ID_TO_NAME
-def create_pdf(filename, df, head, yy, mm, dd, workhour, shift):
+def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
     c = canvas.Canvas(filename, pagesize=landscape(A4))  # Set pagesize to landscape
     
     # Set up the font and size
@@ -32,7 +32,7 @@ def create_pdf(filename, df, head, yy, mm, dd, workhour, shift):
     left_fields = [
         ["KEPALA BAGIAN", '=', head],
         ["TANGGAL", '=', f'{dd}-{MONTH_ID_TO_NAME[int(mm)-1]}-{yy}'],
-        ["JAM KERJA", '=', workhour]
+        ["JAM KERJA", '=', f"{start_hour} - {end_hour}"]
     ]
     y = 550
     for field in left_fields:

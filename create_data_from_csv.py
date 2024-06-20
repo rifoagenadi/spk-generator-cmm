@@ -9,7 +9,7 @@ df_material = pd.read_csv('data/data_material.csv')
 multipliers = {row['Nama Material']: row['BQ'] for _, row in df_material.iterrows() if str(row['BQ']) != 'nan'}
 
 parts = []
-for _, row in df_part.iterrows():
+for i, row in df_part.iterrows():
     processes = ast.literal_eval(row['Proses'])
     stocks = ast.literal_eval(row['Stok Terkini (pcs)'])
     processes = [Process(process_name=process['process_name'], tonnage=process['tonnage_std'], tonnage_alternatives=process['tonnage_alternatives'], stock=stock) for process, stock in zip(processes, stocks)]
@@ -19,6 +19,7 @@ for _, row in df_part.iterrows():
          ideal_stock_3hk=row['Std Stock (3HK)'],
          material=row['Material'],
          material_multiplier=multipliers[row['Nama Part']] if row['Nama Part'] in multipliers else 1.0,
+         minimum_production_quantity=row['Minimal Produksi'],
          processes=processes)
     parts.append(part)
 
