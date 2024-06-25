@@ -5,14 +5,15 @@ from task_prioritization import get_prioritized_tasks, assign_task_to_machines
 import os
 
 proposed_spk_list = [f.split('.')[0] for f in os.listdir("./proposed_spk") if f.endswith('.pdf')]
+poppler_path = r'C:\PROJECT CMM\poppler-24.02.0\Library\bin'
 from pdf2image import convert_from_path
 for spk in proposed_spk_list:
-    images = convert_from_path(f"./proposed_spk/{spk}.pdf")
+    images = convert_from_path(f"./proposed_spk/{spk}.pdf", poppler_path=poppler_path)
     for image in images:
         image.save(f'./proposed_spk/{spk.split('.')[0]}.jpg', 'JPEG')
 
 
-parts, materials = update_stock(parts, materials, env='DEV') # change env to 'PROD' to update data based on DB, else use dummy data
+parts, materials = update_stock(parts, materials, env='PROD') # change env to 'PROD' to update data based on DB, else use dummy data
 parts = [part for part in parts if part.is_active] # filter out inactive parts
 sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
 machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)
@@ -34,11 +35,12 @@ def get_second_spk():
     return df_second_spk, gr.Button("Simpan SPK", interactive=True)
 
 def delete_row(evt: gr.SelectData):
+    global df_spk
     if evt.value == '`DELETE`':
         row_idx, _ = evt.index
-        global df_spk
         df_spk = df_spk.drop(row_idx)
-        return df_spk
+        df_spk.reset_index(drop=True, inplace=True)
+    return df_spk
 
 def delete_row_second(row_idx):
     global df_spk_second

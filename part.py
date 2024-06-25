@@ -190,7 +190,8 @@ def update_stock(parts, materials, env):
                 if name in name2idx:
                     part_idx = name2idx[name]
                     process_idx = opstring2idx(operation)
-                    parts[part_idx].processes[process_idx].stock += int(produced_quantity)
+                    if process_idx < len(parts[part_idx].processes):
+                        parts[part_idx].processes[process_idx].stock += int(produced_quantity)
 
         # add material inventorization to material stocks
         mtlin = get_report_document('MATERIAL_IN', env)
