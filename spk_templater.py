@@ -180,6 +180,4 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
 
     # Save the PDF
     c.save()
-
-# Replace 'output.pdf' with your desired filename
-# create_pdf('output.pdf')
+ 

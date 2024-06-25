@@ -13,6 +13,7 @@ class Task(NamedTuple):
     material: str
     necessity: int
     minimum_production_quantity: int
+    multiplier: float
 
 def get_max_capacity(machine_tonnage):
     if machine_tonnage <= 150: # PP
@@ -27,6 +28,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
 
     # decompose to tasks
     sorted_tasks = []
+    low_material_tasks = []
     for part in sorted_parts:
         initial_necessity = int(part.ideal_stock_3hk) - int(part.processes[-1].stock)
         current_necessity = part.ideal_stock_3hk
@@ -45,7 +47,18 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
             for i, process in enumerate(part.processes):
                 current_necessity = neccesities[i]
                 if i == 0:
-                    if materials[part.material] <= 0:
+                    if materials[part.material] <= 0 and initial_necessity > 0:
+                        current_task = Task(part_name=part.name,
+                                        process_name=process.process_name,
+                                        op=f"OP10",
+                                        quantity=quantity,
+                                        tonnage=process.tonnage,
+                                        tonnage_alternatives=process.tonnage_alternatives,
+                                        material=part.material,
+                                        minimum_production_quantity=part.minimum_production_quantity,
+                                        necessity=initial_necessity,
+                                        multiplier=part.material_multiplier)
+                        low_material_tasks.append(current_task)
                         continue
                     if initial_necessity >= 0:
                         quantity = max(current_necessity, part.minimum_production_quantity)
@@ -67,7 +80,8 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                                         tonnage_alternatives=process.tonnage_alternatives,
                                         material=part.material,
                                         minimum_production_quantity=part.minimum_production_quantity,
-                                        necessity=initial_necessity)
+                                        necessity=initial_necessity,
+                                        multiplier=part.material_multiplier)
                     sorted_tasks.append(current_task)
         else:
             for i, process in enumerate(part.processes):
@@ -80,11 +94,12 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                                     tonnage=process.tonnage,
                                     tonnage_alternatives=process.tonnage_alternatives,
                                     material=part.material,
-                                    necessity=initial_necessity)
+                                    necessity=initial_necessity,
+                                    multiplier=part.material_multiplier)
                 sorted_tasks.append(current_task)
     
 
-    return sorted_tasks[:top_n]
+    return sorted_tasks[:top_n], low_material_tasks
 
 from constants import machine_tonnages
 def assign_task_to_machines(sorted_tasks):

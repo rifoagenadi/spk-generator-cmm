@@ -23,7 +23,7 @@ class Process:
         return f"Process: {self.process_name}, Tonnage: {self.tonnage}, Tonnage Alternatives: {self.tonnage_alternatives}, Stock: {self._stock}"
 
 class Part:
-    def __init__(self, name: str, id: str, customer:str, ideal_stock_3hk: int, material: str, processes: List[Process], material_multiplier: float, minimum_production_quantity: int):
+    def __init__(self, name: str, id: str, customer:str, ideal_stock_3hk: int, material: str, processes: List[Process], material_multiplier: float, minimum_production_quantity: int, is_active: bool):
         self.name = name
         self.id = id
         self.customer = customer
@@ -32,6 +32,7 @@ class Part:
         self.material_multiplier = material_multiplier
         self.processes = processes
         self.minimum_production_quantity = minimum_production_quantity
+        self.is_active = is_active
         
     def __str__(self):
         processes_str = "\n".join(f"  {process}" for process in self.processes)
@@ -183,11 +184,13 @@ def update_stock(parts, materials, env):
             date = production[1]
             if date > parts_last_updated:
                 produced_quantity = production[7]
-                name = production[9]
-                operation = production[-1]
-                part_idx = name2idx[name]
-                process_idx = opstring2idx(operation)
-                parts[part_idx].processes[process_idx].stock += int(produced_quantity)
+                name = production[9] #part name
+                name = name.replace('.', '').strip()
+                operation = production[4]
+                if name in name2idx:
+                    part_idx = name2idx[name]
+                    process_idx = opstring2idx(operation)
+                    parts[part_idx].processes[process_idx].stock += int(produced_quantity)
 
         # add material inventorization to material stocks
         mtlin = get_report_document('MATERIAL_IN', env)
@@ -196,7 +199,8 @@ def update_stock(parts, materials, env):
             if date > parts_last_updated:
                 quantity_in = row[1]
                 material_name = row[5]
-                materials[material_name] += int(quantity_in)
+                if material_name in materials:
+                    materials[material_name] += int(quantity_in)
 
         # subtract delivery from stocks
         rekapdo = get_report_document('DELIVERY_OUT', env)
@@ -205,9 +209,10 @@ def update_stock(parts, materials, env):
             if date > parts_last_updated:
                 delivered_quantity = row[3]
                 name = row[6]
-                part_idx = name2idx[name]
-                process_idx = -1 # Fin material
-                parts[part_idx].processes[process_idx].stock -= int(delivered_quantity)
+                if name in name2idx:
+                    part_idx = name2idx[name]
+                    process_idx = -1 # Fin material
+                    parts[part_idx].processes[process_idx].stock -= int(delivered_quantity)
 
         return parts, materials
 
@@ -223,17 +228,28 @@ def get_spk_dataframe_display(machine_tasks):
         "Process Name": [task.process_name for _, task in tasks],
         "OP": [task.op for _, task in tasks],
         "Quantity": [task.quantity for _, task in tasks],
-        "Material Spec Size": [task.material if task.op == 'OP10' else '' for _, task in tasks]
+        "Material Spec Size": [task.material if task.op == 'OP10' else '' for _, task in tasks],
+        "Delete": ['`DELETE`' for _ in tasks]
     })
 
     return df_tasks
+
+def get_low_material_task_display(low_material_tasks):
+    return pd.DataFrame({
+        "No": [i+1 for i in range(len(low_material_tasks))],
+        "Part Name": [task.part_name for task in low_material_tasks],
+        "Material Spec Size": [task.material for task in low_material_tasks],
+        "Kebutuhan": [task.necessity for task in low_material_tasks],
+        "BQ": [task.multiplier for task in low_material_tasks]
+    })
+
 
 def get_part_stock_dataframe_display(parts):
     return pd.DataFrame({
         "Part Name": [part.name for part in parts],
         "Stok": ["; ".join([f"{process.process_name}: {process.stock}" for process in part.processes]) for part in parts],
         "3HK": [part.ideal_stock_3hk for part in parts],
-        "Status": ["OK" if part.processes[-1].stock >= part.ideal_stock_3hk else "Stok Kurang" for part in parts]
+        "Status": ["OK" if part.processes[-1].stock >= int(part.ideal_stock_3hk) else "Stok Kurang" for part in parts]
     })
 
 def get_material_stock_dataframe_display(materials):

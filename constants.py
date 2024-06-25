@@ -6,7 +6,8 @@ df_empty_tasks = pd.DataFrame({
     "Process Name": [],
     "OP": [],
     "Quantity": [],
-    "Material Spec Size": []
+    "Material Spec Size": [],
+    "Delete": []
 })  
 
 SHIFT_HOUR = 8
