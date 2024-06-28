@@ -1,29 +1,20 @@
 import gradio as gr
 from constants import df_empty_tasks
-from part import parts, materials, update_stock, get_spk_dataframe_display, get_part_stock_dataframe_display, get_material_stock_dataframe_display, get_low_material_task_display
+from part import (parts, materials,
+                update_stock, get_spk_dataframe_display,
+                get_part_stock_dataframe_display,
+                get_material_stock_dataframe_display,
+                get_low_material_task_display)
 from task_prioritization import get_prioritized_tasks, assign_task_to_machines
-import os
 
-proposed_spk_list = [f.split('.')[0] for f in os.listdir("./proposed_spk") if f.endswith('.pdf')]
-poppler_path = r'C:\PROJECT CMM\poppler-24.02.0\Library\bin'
-from pdf2image import convert_from_path
-for spk in proposed_spk_list:
-    images = convert_from_path(f"./proposed_spk/{spk}.pdf", poppler_path=poppler_path)
-    for image in images:
-        image.save(f'./proposed_spk/{spk.split('.')[0]}.jpg', 'JPEG')
-
-
-parts, materials = update_stock(parts, materials, env='PROD') # change env to 'PROD' to update data based on DB, else use dummy data
+parts, materials = update_stock(parts, materials, env='DEV') # change env to 'PROD' to update data based on DB, else use dummy data
 parts = [part for part in parts if part.is_active] # filter out inactive parts
 sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
 machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)
 df_spk = get_spk_dataframe_display(machine_tasks)
 df_second_spk = None
 
-
-def update_stock_listener():
-    return gr.Button("Lihat Pratinjau", interactive=True)
-
+from event_listeners import *
 def get_spk():
     global df_spk
     return df_spk, gr.Button("Simpan SPK", interactive=True)
@@ -47,41 +38,30 @@ def delete_row_second(row_idx):
     df_spk_second = df_spk_second.drop(row_idx-1)
     return df_spk_second
 
-def save_spk(df, leader, year, month, day, start_hour, end_hour, shift):
-    from spk_templater import create_pdf
-    from datetime import datetime
-    shift_id = shift.split(' ')[-1]
-    file_path = f"proposed_spk/CMM-SPK-{datetime(year, month, day).strftime('%Y%m%d')}-{shift_id}.pdf"
-    create_pdf(file_path, df=df, head=leader, yy=year, mm=month, dd=day, start_hour=start_hour, end_hour=end_hour, shift=shift)
-    gr.Info(f"SPK telah disimpan di {file_path}")
-    return gr.Button("Lihat Pratinjau", interactive=True)
-
-def switch_proposed_spk_preview(filename):
-    return gr.Image(f'proposed_spk/{filename}.jpg', type='filepath')
-
-def approve_spk(filename):
-    os.replace(f"proposed_spk/{filename}.pdf", f"approved_spk/{filename}.pdf")
-    os.remove(f"proposed_spk/{filename}.jpg")
-    gr.Info(f"SPK telah disetujui, file disimpan di `approved_spk/{filename}.pdf`")
-    return gr.Image(f'proposed_spk/placeholder.png', type='filepath'), 'Approved'
-
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    proposed_spk_list = gr.State(value=[])
+    with gr.Row():
+        credential = gr.State(value=None)
+        username = gr.Text(label="Username")
+        password = gr.Text(label='Password', type='password')
+        login_button = gr.Button("Login")
+        login_button.click(get_credential, inputs=[username, password], outputs=credential)
     with gr.Tab("SPK"):
-        with gr.Tab("SPK Shift Sore"):
+        with gr.Tab("Shift II (Today)"):
             preview_button = gr.Button("Lihat Pratinjau", interactive=False, render=False)
             update_stock_button = gr.Button("Update Stok")
-            update_stock_button.click(update_stock_listener, outputs=[preview_button])
+            update_stock_button.click(update_stock_listener, inputs=credential, outputs=[preview_button])
             submit_button = gr.Button("Simpan SPK", interactive=False, render=False)            
             with gr.Row():
                 with gr.Column():
                     with gr.Row():
                         year = gr.Number(label="Tahun", minimum=2000, maximum=2100)
-                        month = gr.Number(label="Bulan", minimum=1, maximum=12)
-                        day = gr.Number(label='Tanggal', minimum=1, maximum=31)
+                        month = gr.Dropdown(label="Bulan", choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
+                        day = gr.Dropdown(label="Bulan", choices=[i+1 for i in range(31)])
                     leader = gr.Dropdown(["Ahmad", "Bambang", "Junaedi"], label="PIC Line/Leader")
                 with gr.Column():
                     with gr.Row():
-                        shift = gr.Dropdown(["Shift I", "Shift II"], label="Shift")
+                        shift = gr.Dropdown(value="Shift II", choices=["Shift I", "Shift II"], label="Shift", interactive=False)
                     with gr.Row():
                         start_hour = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
                         end_hour = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
@@ -94,20 +74,20 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
             submit_button.render()
             preview_button_second = gr.Button("Lihat Pratinjau", interactive=False, render=False)
-            submit_button.click(save_spk, inputs=[spk, leader, year, month, day, start_hour, end_hour, shift], outputs=[preview_button_second])
+            submit_button.click(save_spk, inputs=[spk, leader, year, month, day, start_hour, end_hour, shift, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list])
         
-        with gr.Tab(f"SPK Shift Pagi"):
+        with gr.Tab(f"Shift I (Tomorrow)"):
             submit_button_second = gr.Button("Simpan SPK", interactive=False, render=False)            
             with gr.Row():
                 with gr.Column():
                     with gr.Row():
                         year_second = gr.Number(label="Tahun", minimum=2000, maximum=2100)
-                        month_second = gr.Number(label="Bulan", minimum=1, maximum=12)
-                        day_second = gr.Number(label='Tanggal', minimum=1, maximum=31)
+                        month_second = gr.Dropdown(label="Bulan", choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
+                        day_second = gr.Dropdown(label="Tanggal", choices=[i+1 for i in range(31)])
                     leader_second = gr.Dropdown(["Ahmad", "Bambang", "Junaedi"], label="PIC Line/Leader")
                 with gr.Column():
                     with gr.Row():
-                        shift_second = gr.Dropdown(["Shift I", "Shift II"], label="Shift")
+                        shift_second = gr.Dropdown(value="Shift I", choices=["Shift I", "Shift II"], label="Shift", interactive=False)
                     with gr.Row():
                         start_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
                         end_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
@@ -118,36 +98,47 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             spk_second.render()
 
             submit_button_second.render()
-            submit_button_second.click(save_spk, inputs=[spk_second, leader_second, year, month, day, start_hour, end_hour, shift], outputs=preview_button_second)
+            submit_button_second.click(save_spk, inputs=[spk_second, leader_second, year_second, month_second, day_second, start_hour_second, end_hour_second, shift_second, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list])
         
         with gr.Tab("Approve Pengajuan SPK"):
             proposal_preview = gr.Image(interactive=False, render=False)
-            proposed_spk_names_display = []
-            proposed_spk_view_buttons = []
-            proposed_spk_approve_buttons = []
-            proposed_spk_status = []
-            for i in range(len(proposed_spk_list)):
-                proposed_spk_names_display.append(gr.Text(proposed_spk_list[i], render=False))
-                proposed_spk_view_buttons.append(gr.Button("Lihat Pengajuan", render=False)) #TODO edit
-                proposed_spk_approve_buttons.append(gr.Button("Approve", render=False))
-                proposed_spk_status.append(gr.Radio(value='Pending', choices=["Approved", "Pending"], label="Status", render=False))
-            for i in range(len(proposed_spk_names_display)):
-                with gr.Row():
-                    proposed_spk_names_display[i].render()
-                    proposed_spk_view_buttons[i].render()
-                    proposed_spk_view_buttons[i].click(switch_proposed_spk_preview, inputs=proposed_spk_names_display[i], outputs=[proposal_preview])
-                    proposed_spk_approve_buttons[i].render()
-                    proposed_spk_approve_buttons[i].click(approve_spk, inputs=[proposed_spk_names_display[i]], outputs=[proposal_preview, proposed_spk_status[i]])
-                    proposed_spk_status[i].render()
+            @gr.render(inputs=proposed_spk_list)
+            def render_spk_proposal(proposed_spk_list):
+                proposed_spk_names_display = []
+                proposed_spk_view_buttons = []
+                proposed_spk_approve_buttons = []
+                proposed_spk_reject_buttons = []
+                proposed_spk_status = []
+                for i in range(len(proposed_spk_list)):
+                    proposed_spk_names_display.append(gr.Text(proposed_spk_list[i], render=False, label="No. SPK"))
+                    proposed_spk_view_buttons.append(gr.Button("Lihat Pengajuan SPK", render=False)) #TODO edit
+                    proposed_spk_approve_buttons.append(gr.Button("Approve", render=False))
+                    proposed_spk_reject_buttons.append(gr.Button("Reject", render=False))
+                    proposed_spk_status.append(gr.Radio(value='Pending', choices=["Approved", "Pending"], label="Status", render=False))
+                for i in range(len(proposed_spk_names_display)):
+                    with gr.Row():
+                        proposed_spk_names_display[i].render()
+                        proposed_spk_view_buttons[i].render()
+                        proposed_spk_view_buttons[i].click(switch_proposed_spk_preview, inputs=proposed_spk_names_display[i], outputs=[proposal_preview])
+                        with gr.Column():
+                            proposed_spk_approve_buttons[i].render()
+                            proposed_spk_reject_buttons[i].render()
+                            proposed_spk_approve_buttons[i].click(approve_spk, inputs=[proposed_spk_names_display[i]], outputs=[proposal_preview, proposed_spk_status[i]])
+                        proposed_spk_status[i].render()
             gr.Markdown("# Preview SPK")
             proposal_preview.render()
         with gr.Tab(f"Kekurangan Material"):
-            gr.DataFrame(get_low_material_task_display(low_material_tasks))
+            df_low_material_task = gr.DataFrame(get_low_material_task_display(low_material_tasks))
+            part_stocks_export_button = gr.Button("Export to Excel")
+            part_stocks_export_button.click(export_material_necessity_to_excel, inputs=[df_low_material_task])
             
     with gr.Tab("Stok"):
         with gr.Tab("Part"):
             part_stocks_display = gr.DataFrame(get_part_stock_dataframe_display(parts))
+            material_stocks_display = gr.DataFrame(get_material_stock_dataframe_display(materials), render=False)
+            part_stocks_export_button = gr.Button("Export to Excel")
+            part_stocks_export_button.click(export_stock_to_excel, inputs=[part_stocks_display, material_stocks_display])
         with gr.Tab("Material"):
-            material_stocks_display = gr.DataFrame(get_material_stock_dataframe_display(materials))
+            material_stocks_display.render()
 
 demo.launch()

@@ -225,6 +225,7 @@ def get_spk_dataframe_display(machine_tasks):
     df_tasks = pd.DataFrame({
         "No": [i+1 for i in range(len(tasks))],
         "Mesin": [tonnage2name[tonnage_idx] for tonnage_idx, _ in tasks],
+        "Part Number": [task.part_id for _, task in tasks],
         "Part Name": [task.part_name for _, task in tasks],
         "Process Name": [task.process_name for _, task in tasks],
         "OP": [task.op for _, task in tasks],

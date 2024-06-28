@@ -5,6 +5,7 @@ from part import materials
 
 class Task(NamedTuple):
     part_name: str
+    part_id: str
     process_name: str
     op: str
     quantity: int
@@ -49,9 +50,10 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                 if i == 0:
                     if materials[part.material] <= 0 and initial_necessity > 0:
                         current_task = Task(part_name=part.name,
+                                        part_id=part.id,
                                         process_name=process.process_name,
                                         op=f"OP10",
-                                        quantity=quantity,
+                                        quantity=initial_necessity,
                                         tonnage=process.tonnage,
                                         tonnage_alternatives=process.tonnage_alternatives,
                                         material=part.material,
@@ -73,6 +75,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                 if quantity > 0:
                     op_id = i+1
                     current_task = Task(part_name=part.name,
+                                        part_id=part.id,
                                         process_name=process.process_name,
                                         op=f"OP{op_id}0",
                                         quantity=quantity,
@@ -88,6 +91,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                 current_necessity = neccesities[i]
                 op_id = i+1
                 current_task = Task(part_name=part.name,
+                                    part_id=part.id,
                                     process_name=process.process_name,
                                     op=f"OP{op_id}0",
                                     quantity=current_necessity,

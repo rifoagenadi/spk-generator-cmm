@@ -1,4 +1,25 @@
 import pandas as pd
+
+uname_and_pass2credential = {
+    ('azka', 'cmmazka'): 'ppic',
+    ('junaedi', 'cmmjunaedi'): 'supervisor'
+}
+
+month_name_to_number = {
+    'Januari': 1,
+    'Februari': 2,
+    'Maret': 3,
+    'April': 4,
+    'Mei': 5,
+    'Juni': 6,
+    'Juli': 7,
+    'Agusuts': 8,
+    'September': 9,
+    'Oktober': 10,
+    'November': 11,
+    'Desember': 12
+}
+
 df_empty_tasks = pd.DataFrame({
     "No": [],
     "Mesin": [],

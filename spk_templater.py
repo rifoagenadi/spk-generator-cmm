@@ -86,6 +86,7 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
     c.drawImage('data/qr.png', 750, 500, width=75, height=75)
 
     df = df.fillna('')
+    df.drop(columns=['Part Number', 'Delete'], inplace=True)
     values = df.values.tolist()
     values = [val[:6] + ['', '', ''] + val[-1:] + [''] for val in values]
     num_of_tasks_for_each_machine = []
@@ -160,8 +161,9 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
     style = TableStyle(table_style+merge_cells+remove_bottom_lines+add_right_lines)
     table.setStyle(style)
 
+    offset = -10.00*df.shape[0] + 200.0
     table.wrapOn(c, 600, 500)  # Adjust the width and height as needed
-    table.drawOn(c, 10, 100)   # Position the table on the page (72 dpi margin)
+    table.drawOn(c, 10, 100+offset)   # Position the table on the page (72 dpi margin)
 
     c.setFont('Helvetica', size=6)
     c.drawString(20, 70, "Note")
