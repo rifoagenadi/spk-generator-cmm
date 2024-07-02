@@ -772,6 +772,23 @@ typing-extensions = ">=4.0,<5.0"
 websockets = ">=10.0,<12.0"
 
 [[package]]
+name = "gradio-modal"
+version = "0.0.3"
+description = "A popup modal component"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "gradio_modal-0.0.3-py3-none-any.whl", hash = "sha256:454cbd7d9ca7607894bd828a2cda0cc3f33a0c46b3d91a392a38e19fa288d46a"},
+    {file = "gradio_modal-0.0.3.tar.gz", hash = "sha256:f1eaf3fd2b4b47a1efe84a291d95579093c65742e50789f563bb7065b14eb748"},
+]
+
+[package.dependencies]
+gradio = ">=4.0,<5.0"
+
+[package.extras]
+dev = ["build", "twine"]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -3164,4 +3181,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "403d37e468a3df1a21bc17013665f7db045c1de6e57f23bb2372da3915c4ff08"
+content-hash = "6c6d6c92daa847f6a9aa6ae8c54db28317f63c06db4b4d69f4478cefc078133e"

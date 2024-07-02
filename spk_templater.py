@@ -86,7 +86,7 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
     c.drawImage('data/qr.png', 750, 500, width=75, height=75)
 
     df = df.fillna('')
-    df.drop(columns=['Part Number', 'Delete'], inplace=True)
+    df.drop(columns=['Delete'], inplace=True)
     values = df.values.tolist()
     values = [val[:6] + ['', '', ''] + val[-1:] + [''] for val in values]
     num_of_tasks_for_each_machine = []

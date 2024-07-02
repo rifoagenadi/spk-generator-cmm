@@ -45,16 +45,10 @@ def convert_pdf_to_image():
         for image in images:
             image.save(f'outputs/proposed_spk/{spk.split('.')[0]}.jpg', 'JPEG')
 
-def update_stock_listener(credential):
-    if credential == 'ppic':
-        return gr.Button("Lihat Pratinjau", interactive=True)
-    else:
-        gr.Warning("Perlu login terlebih dahulu")
-        return gr.Button("Lihat Pratinjau", interactive=False)
-
 async def save_spk(df, leader, year, month, day, start_hour, end_hour, shift, proposed_spk_list):
     from spk_templater import create_pdf
     from datetime import datetime
+    import pickle as pkl
     shift_id = shift.split(' ')[-1]
     month = month_name_to_number[month]
     day = int(day)
@@ -62,16 +56,36 @@ async def save_spk(df, leader, year, month, day, start_hour, end_hour, shift, pr
     file_path = f"outputs/proposed_spk/{spk_no}.pdf"
     create_pdf(file_path, df=df, head=leader, yy=year, mm=month, dd=day, start_hour=start_hour, end_hour=end_hour, shift=shift)
     convert_pdf_to_image()
+    pkl.dump(df, open(f"outputs/proposed_spk/{spk_no}.pickle", 'wb'))
     gr.Info(f"SPK telah disimpan di {file_path}")
     if spk_no not in proposed_spk_list:
         proposed_spk_list.append(spk_no)
-    return gr.Button("Lihat Pratinjau", interactive=True), proposed_spk_list
+    return gr.Button("Lihat Pratinjau", interactive=True), proposed_spk_list, gr.Button("Tambah", interactive=True)
 
 def switch_proposed_spk_preview(filename):
     return gr.Image(f'outputs/proposed_spk/{filename}.jpg', type='filepath')
 
-def approve_spk(filename):
-    os.replace(f"outputs/proposed_spk/{filename}.pdf", f"outputs/approved_spk/{filename}.pdf")
-    os.remove(f"outputs/proposed_spk/{filename}.jpg")
-    gr.Info(f"SPK telah disetujui, file disimpan di `approved_spk/{filename}.pdf`")
-    return gr.Image(f'proposed_spk/placeholder.png', type='filepath'), 'Approved'
+def approve_spk(filename, credential, proposed_spk_list, approved_spk_list):
+    if credential == 'supervisor':
+        os.replace(f"outputs/proposed_spk/{filename}.pdf", f"outputs/approved_spk/{filename}.pdf")
+        os.replace(f"outputs/proposed_spk/{filename}.jpg", f"outputs/approved_spk/{filename}.jpg")
+        os.remove(f"outputs/proposed_spk/{filename}.pickle")
+        gr.Info(f"SPK telah disetujui, file disimpan di `approved_spk/{filename}.pdf`")
+        proposed_spk_list.remove(filename)
+        approved_spk_list.append(filename)
+        return gr.Image(f'proposed_spk/placeholder.png', type='filepath'), proposed_spk_list, approved_spk_list
+    else:
+        gr.Warning("Hanya Supervisor yang dapat menyetujui pengajuan SPK")
+        return gr.Image(f'proposed_spk/placeholder.png', type='filepath'), proposed_spk_list, approved_spk_list
+
+def reject_spk(filename, credential, proposed_spk_list, rejected_spk_list):
+    if credential == 'supervisor':
+        os.replace(f"outputs/proposed_spk/{filename}.pdf", f"outputs/rejected_spk/{filename}.pdf")
+        os.replace(f"outputs/proposed_spk/{filename}.pickle", f"outputs/rejected_spk/{filename}.pickle")
+        os.remove(f"outputs/proposed_spk/{filename}.jpg")
+        gr.Info(f"SPK telah disetujui, file disimpan di `rejected_spk/{filename}.pdf`")
+        proposed_spk_list.remove(filename)
+        rejected_spk_list.append(filename)
+        return gr.Image(f'proposed_spk/placeholder.png', type='filepath'), proposed_spk_list, rejected_spk_list
+    else:
+        gr.Warning("Hanya Supervisor yang dapat menolak pengajuan SPK")

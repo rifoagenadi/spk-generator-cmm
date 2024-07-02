@@ -129,6 +129,12 @@ materials = {'SPHC  3.2 X 99 X 1494': 162,
 import pickle as pkl
 from datetime import datetime
 parts = pkl.load(open('data/parts.pickle', 'rb'))
+formatted_part_names = [f"{part.id} - {part.name} - {part.customer}" for part in parts]
+process_names = []
+for part in parts:
+    for process in part.processes:
+        if process.process_name not in process_names:
+            process_names.append(process.process_name)
 parts_last_updated = datetime(2024, 6, 11, 0, 0, 0, 0)
 
 def get_report_document(type, env):
@@ -225,7 +231,6 @@ def get_spk_dataframe_display(machine_tasks):
     df_tasks = pd.DataFrame({
         "No": [i+1 for i in range(len(tasks))],
         "Mesin": [tonnage2name[tonnage_idx] for tonnage_idx, _ in tasks],
-        "Part Number": [task.part_id for _, task in tasks],
         "Part Name": [task.part_name for _, task in tasks],
         "Process Name": [task.process_name for _, task in tasks],
         "OP": [task.op for _, task in tasks],

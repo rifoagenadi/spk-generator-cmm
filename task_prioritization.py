@@ -5,7 +5,6 @@ from part import materials
 
 class Task(NamedTuple):
     part_name: str
-    part_id: str
     process_name: str
     op: str
     quantity: int
@@ -49,8 +48,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                 current_necessity = neccesities[i]
                 if i == 0:
                     if materials[part.material] <= 0 and initial_necessity > 0:
-                        current_task = Task(part_name=part.name,
-                                        part_id=part.id,
+                        current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                         process_name=process.process_name,
                                         op=f"OP10",
                                         quantity=initial_necessity,
@@ -65,7 +63,6 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                     if initial_necessity >= 0:
                         quantity = max(current_necessity, part.minimum_production_quantity)
                         quantity = min(quantity, prev_stock)
-                        # quantity = min(current_necessity, prev_stock)
                     else:
                         quantity = prev_stock if prev_stock >= part.minimum_production_quantity else 0
                     materials[part.material] -= int(quantity / multiplier) if multiplier >= 1 else int(quantity*multiplier)
@@ -74,8 +71,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                 prev_stock = process.stock + quantity
                 if quantity > 0:
                     op_id = i+1
-                    current_task = Task(part_name=part.name,
-                                        part_id=part.id,
+                    current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                         process_name=process.process_name,
                                         op=f"OP{op_id}0",
                                         quantity=quantity,
@@ -90,8 +86,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
             for i, process in enumerate(part.processes):
                 current_necessity = neccesities[i]
                 op_id = i+1
-                current_task = Task(part_name=part.name,
-                                    part_id=part.id,
+                current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                     process_name=process.process_name,
                                     op=f"OP{op_id}0",
                                     quantity=current_necessity,
