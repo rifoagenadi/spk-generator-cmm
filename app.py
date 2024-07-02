@@ -118,8 +118,8 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                         with gr.Row():
                             shift = gr.Dropdown(value="Shift II", choices=["Shift I", "Shift II"], label="Shift", interactive=False)
                         with gr.Row():
-                            start_hour = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
-                            end_hour = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
+                            start_hour = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja", value="20.00")
+                            end_hour = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Selesai Kerja", value="05.00")
                 with gr.Row():
                     preview_button.render()
                     spk = gr.DataFrame(df_empty_tasks, interactive=True, row_count=(1, 'static'), col_count=(7, 'static'), render=False, datatype=["number", "str", "str", "str", "str", "number", "str", "markdown"])
@@ -183,8 +183,8 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                         with gr.Row():
                             shift_second = gr.Dropdown(value="Shift I", choices=["Shift I", "Shift II"], label="Shift", interactive=False)
                         with gr.Row():
-                            start_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
-                            end_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja")
+                            start_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Mulai Kerja", value="08.00")
+                            end_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Selesai Kerja", value="17.00")
                 with gr.Row():
                     preview_button_second.render()
                     spk_second = gr.DataFrame(df_empty_tasks, interactive=True, col_count=(7, 'static'),  render=False)
