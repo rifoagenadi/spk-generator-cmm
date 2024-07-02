@@ -46,7 +46,7 @@ class Part:
             f"Processes:\n{processes_str}"
         )
 
-materials = {'SPHC  3.2 X 99 X 1494': 162,
+initial_materials = {'SPHC  3.2 X 99 X 1494': 162,
  'SPHC  3.2 X 124 X 2385': 0,
  'SPHC-PO  2.3 X 230 X 430': 0,
  'SPCC T 2.0 X 50 X 1219': 2184,
@@ -128,10 +128,10 @@ materials = {'SPHC  3.2 X 99 X 1494': 162,
 
 import pickle as pkl
 from datetime import datetime
-parts = pkl.load(open('data/parts.pickle', 'rb'))
-formatted_part_names = [f"{part.id} - {part.name} - {part.customer}" for part in parts]
+initial_parts = pkl.load(open('data/parts.pickle', 'rb'))
+formatted_part_names = [f"{part.id} - {part.name} - {part.customer}" for part in initial_parts]
 process_names = []
-for part in parts:
+for part in initial_parts:
     for process in part.processes:
         if process.process_name not in process_names:
             process_names.append(process.process_name)

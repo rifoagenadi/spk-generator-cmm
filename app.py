@@ -1,7 +1,8 @@
 import gradio as gr
+from copy import deepcopy
 from gradio_modal import Modal
 from constants import df_empty_tasks, tonnage2name
-from part import (parts, materials, 
+from part import (initial_parts, initial_materials,
                 formatted_part_names, process_names,
                 update_stock, get_spk_dataframe_display,
                 get_part_stock_dataframe_display,
@@ -10,12 +11,22 @@ from part import (parts, materials,
 from task_prioritization import get_prioritized_tasks, assign_task_to_machines
 import os
 
-parts, materials = update_stock(parts, materials, env='DEV') # change env to 'PROD' to update data based on DB, else use dummy data
+parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env='DEV') # change env to 'PROD' to update data based on DB, else use dummy data
 parts = [part for part in parts if part.is_active] # filter out inactive parts
 sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
 machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)
 df_spk = get_spk_dataframe_display(machine_tasks)
 df_second_spk = None
+
+def update_stock_on_load():
+    global parts, materials, sorted_tasks, low_material_tasks, machine_tasks, unassigned_tasks, df_spk
+    import initial_parts, initial_materials
+    parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env='DEV') # change env to 'PROD' to update data based on DB, else use dummy data
+    parts = [part for part in parts if part.is_active] # filter out inactive parts
+    sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
+    machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)
+    df_spk = get_spk_dataframe_display(machine_tasks)
+
 
 proposed_spk_initial_state = [f.split('.')[0] for f in os.listdir("outputs/proposed_spk") if f.endswith('.pdf')]
 approved_spk_initial_state = [f.split('.')[0] for f in os.listdir("outputs/approved_spk") if f.endswith('.pdf')]
@@ -64,7 +75,7 @@ def append_new_task(new_task_machine, new_task_part_name, new_task_process_name,
     }
 
     df_spk = df_spk._append(new_row, ignore_index=True)
-    return df_spk, Modal(visible=True)
+    return df_spk, Modal(visible=False)
 
 def delete_row_second(row_idx):
     global df_second_spk
@@ -87,10 +98,11 @@ def append_new_task_second(new_task_machine, new_task_part_name, new_task_proces
     }
 
     df_second_spk = df_second_spk._append(new_row, ignore_index=True)
-    return df_second_spk, Modal(visible=True)
+    return df_second_spk, Modal(visible=False)
 
 
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    # demo.load(update_stock_on_load)
     proposed_spk_list = gr.State(value=proposed_spk_initial_state)
     approved_spk_list = gr.State(value=approved_spk_initial_state)
     rejected_spk_list = gr.State(value=rejected_spk_initial_state)
@@ -187,7 +199,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                             end_hour_second = gr.Dropdown([f"0{i}.00" if i <= 9 else f"{i}.00" for i in range(24)], label="Jam Selesai Kerja", value="17.00")
                 with gr.Row():
                     preview_button_second.render()
-                    spk_second = gr.DataFrame(df_empty_tasks, interactive=True, col_count=(7, 'static'),  render=False)
+                    spk_second = gr.DataFrame(df_empty_tasks, interactive=True, col_count=(7, 'static'), row_count=(0, 'static'), render=False)
                     preview_button_second.click(get_second_spk, outputs=[spk_second, submit_button_second])
                 spk_second.render()
 
@@ -203,7 +215,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                         cancel_deletion_button_second.click(lambda: Modal(visible=False), None, delete_confirmation_modal_second)
                         confirm_deletion_button_second = gr.Button("Ya, Hapus")
                         confirm_deletion_button_second.click(delete_row_second, inputs=row_to_be_deleted_second, outputs=[spk_second, delete_confirmation_modal_second])
-
+                spk_second.select(spk_select_listener, outputs=[row_to_be_deleted_second, delete_confirmation_modal_second])
 
                 with Modal(visible=False) as new_task_modal_second:
                     gr.Markdown(
@@ -227,7 +239,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                         gr.Markdown()
                     with gr.Column(scale=2):
                         add_task_button_second.render()
-                add_task_button.click(lambda: Modal(visible=True), None, new_task_modal_second)
+                add_task_button_second.click(lambda: Modal(visible=True), None, new_task_modal_second)
 
                 submit_button_second.render()
                 submit_button_second.click(save_spk, inputs=[spk_second, leader_second, year_second, month_second, day_second, start_hour_second, end_hour_second, shift_second, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list])
@@ -299,7 +311,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                                 approved_spk_status[i].render()
                             with gr.Column(scale=2):
                                 approved_spk_view_buttons[i].render()
-                                approved_spk_view_buttons[i].click(switch_proposed_spk_preview, inputs=approved_spk_names_display[i], outputs=[approved_proposal_preview])
+                                approved_spk_view_buttons[i].click(switch_approved_spk_preview, inputs=approved_spk_names_display[i], outputs=[approved_proposal_preview])
                 approved_proposal_preview.render()
             with gr.Tab("SPK Ditolak"):
                 def revise_spk(filename):

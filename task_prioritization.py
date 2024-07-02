@@ -1,7 +1,7 @@
 
 from typing import NamedTuple, List
 from constants import SHIFT_HOUR
-from part import materials
+from part import initial_materials
 
 class Task(NamedTuple):
     part_name: str
@@ -42,12 +42,12 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
         if check_material_availability:
             # second pass: count actual quantity (compared to available material or WIP stock)
             multiplier = part.material_multiplier
-            producible_quantity = int(multiplier * materials[part.material]) if multiplier >= 1 else int(materials[part.material]/multiplier)
+            producible_quantity = int(multiplier * initial_materials[part.material]) if multiplier >= 1 else int(initial_materials[part.material]/multiplier)
             prev_stock = producible_quantity
             for i, process in enumerate(part.processes):
                 current_necessity = neccesities[i]
                 if i == 0:
-                    if materials[part.material] <= 0 and initial_necessity > 0:
+                    if initial_materials[part.material] <= 0 and initial_necessity > 0:
                         current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                         process_name=process.process_name,
                                         op=f"OP10",
@@ -65,7 +65,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                         quantity = min(quantity, prev_stock)
                     else:
                         quantity = prev_stock if prev_stock >= part.minimum_production_quantity else 0
-                    materials[part.material] -= int(quantity / multiplier) if multiplier >= 1 else int(quantity*multiplier)
+                    initial_materials[part.material] -= int(quantity / multiplier) if multiplier >= 1 else int(quantity*multiplier)
                 else:
                     quantity = min(current_necessity, prev_stock)
                 prev_stock = process.stock + quantity

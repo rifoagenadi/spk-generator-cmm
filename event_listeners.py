@@ -65,6 +65,9 @@ async def save_spk(df, leader, year, month, day, start_hour, end_hour, shift, pr
 def switch_proposed_spk_preview(filename):
     return gr.Image(f'outputs/proposed_spk/{filename}.jpg', type='filepath')
 
+def switch_approved_spk_preview(filename):
+    return gr.Image(f'outputs/approved_spk/{filename}.jpg', type='filepath')
+
 def approve_spk(filename, credential, proposed_spk_list, approved_spk_list):
     if credential == 'supervisor':
         os.replace(f"outputs/proposed_spk/{filename}.pdf", f"outputs/approved_spk/{filename}.pdf")
