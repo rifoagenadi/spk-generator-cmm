@@ -111,9 +111,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                     with gr.Column():
                         with gr.Row():
                             year = gr.Number(label="Tahun", minimum=2000, maximum=2100)
-                            month = gr.Dropdown(label="Bulan", choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
-                            day = gr.Dropdown(label="Tanggal", choices=[i+1 for i in range(31)])
-                        leader = gr.Dropdown(["Ahmad", "Bambang", "Junaedi"], label="PIC Line/Leader")
+                            month = gr.Dropdown(label="Bulan",value='Januari', choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
+                            day = gr.Dropdown(value=1, label="Tanggal", choices=[i+1 for i in range(31)])
+                        leader = gr.Dropdown(value="Ahmad", choices=["Ahmad", "Bambang", "Junaedi"], label="PIC Line/Leader")
                     with gr.Column():
                         with gr.Row():
                             shift = gr.Dropdown(value="Shift II", choices=["Shift I", "Shift II"], label="Shift", interactive=False)
@@ -176,9 +176,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                     with gr.Column():
                         with gr.Row():
                             year_second = gr.Number(label="Tahun", minimum=2000, maximum=2100)
-                            month_second = gr.Dropdown(label="Bulan", choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
-                            day_second = gr.Dropdown(label="Tanggal", choices=[i+1 for i in range(31)])
-                        leader_second = gr.Dropdown(["Ahmad", "Bambang", "Junaedi"], label="PIC Line/Leader")
+                            month_second = gr.Dropdown(label="Bulan", choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'], value="Januari")
+                            day_second = gr.Dropdown(label="Tanggal", choices=[i+1 for i in range(31)], value=1)
+                        leader_second = gr.Dropdown(choices=["Ahmad", "Bambang", "Junaedi"], value="Ahmad", label="PIC Line/Leader")
                     with gr.Column():
                         with gr.Row():
                             shift_second = gr.Dropdown(value="Shift I", choices=["Shift I", "Shift II"], label="Shift", interactive=False)

@@ -130,7 +130,7 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
         ('ALIGN', (0, 0), (-1, 1), 'CENTER'),  # Align all cells to center horizontally
         ('VALIGN', (0, 0), (-1, 1), 'MIDDLE'),  # Vertically align all cells to middle
         ('ALIGN', (1, 0), (1, -1), 'CENTER'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
         ('VALIGN', (0, 2), (1, -1), 'TOP'),  # Vertically first two column to top
     ]
 
@@ -161,7 +161,7 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
     style = TableStyle(table_style+merge_cells+remove_bottom_lines+add_right_lines)
     table.setStyle(style)
 
-    offset = -10.00*df.shape[0] + 200.0
+    offset = -12*df.shape[0] + 300.0
     table.wrapOn(c, 600, 500)  # Adjust the width and height as needed
     table.drawOn(c, 10, 100+offset)   # Position the table on the page (72 dpi margin)
 
