@@ -1,7 +1,6 @@
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Table, TableStyle
 import qrcode
 
