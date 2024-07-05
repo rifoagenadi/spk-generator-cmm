@@ -9,9 +9,19 @@ from part import (initial_parts, initial_materials,
                 get_material_stock_dataframe_display,
                 get_low_material_task_display)
 from task_prioritization import get_prioritized_tasks, assign_task_to_machines
+from gradio_calendar import Calendar
 import os
+from pathlib import Path
 
-env = "PROD" # change env to 'PROD' to update data based on DB, else use dummy data
+base_path = 'C:\Users\AZKA\Downloads\spk_generator_output' 
+# base_path = '/Users/bebek/Downloads/spk_generator_output'
+paths = [f'{base_path}', f'{base_path}/approved_spk', f'{base_path}/rejected_spk', f'{base_path}/proposed_spk']
+for path in paths:
+    path = Path(path)
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+
+env = "DEV" # change env to 'PROD' to update data based on DB, else use dummy data
 parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env=env) 
 parts = [part for part in parts if part.is_active] # filter out inactive parts
 sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
@@ -28,14 +38,13 @@ def update_stock_on_load():
     machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)
     df_spk = get_spk_dataframe_display(machine_tasks)
 
-
-proposed_spk_initial_state = [f.split('.')[0] for f in os.listdir("outputs/proposed_spk") if f.endswith('.pdf')]
-approved_spk_initial_state = [f.split('.')[0] for f in os.listdir("outputs/approved_spk") if f.endswith('.pdf')]
-rejected_spk_initial_state = [f.split('.')[0] for f in os.listdir("outputs/rejected_spk") if f.endswith('.pdf')]
+proposed_spk_initial_state = [f.split('.')[0] for f in os.listdir(f"{base_path}/proposed_spk") if f.endswith('.pdf')]
+approved_spk_initial_state = [f.split('.')[0] for f in os.listdir(f"{base_path}/approved_spk") if f.endswith('.pdf')]
+rejected_spk_initial_state = [f.split('.')[0] for f in os.listdir(f"{base_path}/rejected_spk") if f.endswith('.pdf')]
 
 from event_listeners import *
 def get_spk(credential):
-    if credential == 'ppic':
+    if credential == 'ppic' or credential == 'supervisor':
         global df_spk
         return df_spk, gr.Button("Simpan SPK", interactive=True), gr.Button("Tambah", interactive=True)
     else:
@@ -115,6 +124,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         login_button.click(get_credential, inputs=[username, password], outputs=credential)
 
     with gr.Tab("SPK"):
+        
         with gr.Tabs("SPK_Tab_Items") as spk_tabs:
             with gr.TabItem("Shift II (Today)", id=0):
                 preview_button = gr.Button("Lihat Pratinjau", render=False)
@@ -123,9 +133,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
-                            year = gr.Number(label="Tahun", minimum=2000, maximum=2100)
-                            month = gr.Dropdown(label="Bulan",value='Januari', choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'])
-                            day = gr.Dropdown(value=1, label="Tanggal", choices=[i+1 for i in range(31)])
+                            date = Calendar(type="datetime", label="Pilih tanggal", info="Klik ikon kalender untuk memilih tanggal")
                         leader = gr.Dropdown(value="Ahmad", choices=["Ahmad", "Bambang", "Junaedi"], label="PIC Line/Leader")
                     with gr.Column():
                         with gr.Row():
@@ -181,16 +189,14 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 submit_button.render()
                 preview_button_second = gr.Button("Lihat Pratinjau", interactive=False, render=False)
                 add_task_button_second = gr.Button("Tambah", interactive=False, render=False)
-                submit_button.click(save_spk, inputs=[spk, leader, year, month, day, start_hour, end_hour, shift, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list, add_task_button_second])
+                submit_button.click(save_spk, inputs=[spk, leader, date, start_hour, end_hour, shift, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list, add_task_button_second])
             
             with gr.TabItem(f"Shift I (Tomorrow)", id=1):
                 submit_button_second = gr.Button("Simpan SPK", interactive=False, render=False)
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
-                            year_second = gr.Number(label="Tahun", minimum=2000, maximum=2100)
-                            month_second = gr.Dropdown(label="Bulan", choices=['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'], value="Januari")
-                            day_second = gr.Dropdown(label="Tanggal", choices=[i+1 for i in range(31)], value=1)
+                            date_second = Calendar(type="datetime", label="Pilih tanggal", info="Klik ikon kalender untuk memilih tanggal")
                         leader_second = gr.Dropdown(choices=["Ahmad", "Bambang", "Junaedi"], value="Ahmad", label="PIC Line/Leader")
                     with gr.Column():
                         with gr.Row():
@@ -243,7 +249,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 add_task_button_second.click(lambda: Modal(visible=True), None, new_task_modal_second)
 
                 submit_button_second.render()
-                submit_button_second.click(save_spk, inputs=[spk_second, leader_second, year_second, month_second, day_second, start_hour_second, end_hour_second, shift_second, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list])
+                submit_button_second.click(save_spk, inputs=[spk_second, leader_second, date_second, start_hour_second, end_hour_second, shift_second, proposed_spk_list], outputs=[preview_button_second, proposed_spk_list])
 
             with gr.TabItem("Pengajuan SPK"):
                 selected_spk_proposal = gr.State()
@@ -253,6 +259,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                         return Modal(visible=True), filename
                     else:
                         gr.Warning("Hanya Supervisor yang dapat menyetujui/menolak pengajuan SPK")
+                        return Modal(visible=False), None
 
                 with Modal(visible=False) as spk_approve_modal:
                     gr.Markdown(f"# Apakah Anda menyetujui pengajuan SPK tersebut?")
@@ -317,7 +324,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             with gr.Tab("SPK Ditolak"):
                 def revise_spk(filename):
                     import pickle as pkl
-                    df = pkl.load(open(f"outputs/rejected_spk/{filename}.pickle", 'rb'))
+                    df = pkl.load(open(f"{base_path}/rejected_spk/{filename}.pickle", 'rb'))
                     tab_idx = 0 if "II" in filename else 1
                     return df, gr.Tabs(selected=tab_idx)
 
