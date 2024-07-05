@@ -3,13 +3,16 @@ from constants import uname_and_pass2credential
 import os
 import pandas as pd
 
-base_path = 'C:\Users\AZKA\Downloads\spk_generator_output' 
+base_path = r'C:\Users\AZKA\Downloads\spk_generator_output' 
 # base_path = '/Users/bebek/Downloads/spk_generator_output'
 def get_credential(username, password):
     uname_and_pass = (username, password)
     if uname_and_pass in uname_and_pass2credential:
         gr.Info(f"Login Berhasil, {username.upper()}: {uname_and_pass2credential[uname_and_pass].upper()}")
         return uname_and_pass2credential[uname_and_pass]
+    elif username == '' or password == '':
+        gr.Warning("Mohon masukkan username dan password untuk melanjutkan")
+        return None
     else:
         gr.Warning("Username atau password salah")
         return None

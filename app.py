@@ -13,7 +13,7 @@ from gradio_calendar import Calendar
 import os
 from pathlib import Path
 
-base_path = 'C:\Users\AZKA\Downloads\spk_generator_output' 
+base_path = r'C:\Users\AZKA\Downloads\spk_generator_output' 
 # base_path = '/Users/bebek/Downloads/spk_generator_output'
 paths = [f'{base_path}', f'{base_path}/approved_spk', f'{base_path}/rejected_spk', f'{base_path}/proposed_spk']
 for path in paths:
@@ -31,7 +31,7 @@ df_second_spk = None
 
 def update_stock_on_load():
     global parts, materials, sorted_tasks, low_material_tasks, machine_tasks, unassigned_tasks, df_spk
-    import initial_parts, initial_materials
+    from part import initial_parts, initial_materials
     parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env=env) # change env to 'PROD' to update data based on DB, else use dummy data
     parts = [part for part in parts if part.is_active] # filter out inactive parts
     sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
