@@ -11,7 +11,8 @@ from part import (initial_parts, initial_materials,
 from task_prioritization import get_prioritized_tasks, assign_task_to_machines
 import os
 
-parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env='PROD') # change env to 'PROD' to update data based on DB, else use dummy data
+env = "PROD" # change env to 'PROD' to update data based on DB, else use dummy data
+parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env=env) 
 parts = [part for part in parts if part.is_active] # filter out inactive parts
 sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
 machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)
@@ -21,7 +22,7 @@ df_second_spk = None
 def update_stock_on_load():
     global parts, materials, sorted_tasks, low_material_tasks, machine_tasks, unassigned_tasks, df_spk
     import initial_parts, initial_materials
-    parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env='PROD') # change env to 'PROD' to update data based on DB, else use dummy data
+    parts, materials = update_stock(deepcopy(initial_parts), deepcopy(initial_materials), env=env) # change env to 'PROD' to update data based on DB, else use dummy data
     parts = [part for part in parts if part.is_active] # filter out inactive parts
     sorted_tasks, low_material_tasks = get_prioritized_tasks(parts, top_n=200)
     machine_tasks, unassigned_tasks = assign_task_to_machines(sorted_tasks)

@@ -173,12 +173,18 @@ def create_pdf(filename, df, head, yy, mm, dd, start_hour, end_hour, shift):
     c.rect(10, 30, 270, 50)
 
     c.setFont('Helvetica', size=10)
-    c.drawString(680, 75, "APPD")
-    c.drawString(750, 75, "DRAFT")
-    c.rect(660, 65, 70, 20)
-    c.rect(730, 65, 70, 20)
-    c.rect(660, 30, 70, 35)
-    c.rect(730, 30, 70, 35)
+    c.drawString(680, 95, "APPD")
+    c.drawString(750, 95, "DRAFT")
+    c.rect(660, 85, 70, 20)
+    c.rect(730, 85, 70, 20)
+    c.rect(660, 50, 70, 35)
+    c.rect(730, 50, 70, 35)
+
+    c.setFont('Helvetica', size=8)
+    c.drawString(665, 40, "SECTION HEAD")
+    c.drawString(755, 40, "PPIC")
+    c.rect(660, 30, 70, 20)
+    c.rect(730, 30, 70, 20)
 
     # Save the PDF
     c.save()
