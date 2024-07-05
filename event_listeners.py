@@ -45,16 +45,13 @@ def convert_pdf_to_image():
         for image in images:
             image.save(f'outputs/proposed_spk/{spk.split('.')[0]}.jpg', 'JPEG')
 
-async def save_spk(df, leader, year, month, day, start_hour, end_hour, shift, proposed_spk_list):
+async def save_spk(df, leader, date, start_hour, end_hour, shift, proposed_spk_list):
     from spk_templater import create_pdf
-    from datetime import datetime
     import pickle as pkl
     shift_id = shift.split(' ')[-1]
-    month = month_name_to_number[month]
-    day = int(day)
-    spk_no = f"CMM-SPK-{datetime(year, month, day).strftime('%Y%m%d')}-{shift_id}"
+    spk_no = f"CMM-SPK-{date.strftime('%Y%m%d')}-{shift_id}"
     file_path = f"outputs/proposed_spk/{spk_no}.pdf"
-    create_pdf(file_path, df=df, head=leader, yy=year, mm=month, dd=day, start_hour=start_hour, end_hour=end_hour, shift=shift)
+    create_pdf(file_path, df=df, head=leader, date=date, start_hour=start_hour, end_hour=end_hour, shift=shift)
     convert_pdf_to_image()
     pkl.dump(df, open(f"outputs/proposed_spk/{spk_no}.pickle", 'wb'))
     gr.Info(f"SPK telah disimpan di {file_path}")
