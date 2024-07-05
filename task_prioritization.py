@@ -3,6 +3,9 @@ from typing import NamedTuple, List
 from constants import SHIFT_HOUR
 from part import initial_materials
 
+def round_to_nearest_upper_50(x):
+    return ((x + 49) // 50) * 50
+
 class Task(NamedTuple):
     part_name: str
     process_name: str
@@ -31,8 +34,11 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
     low_material_tasks = []
     for part in sorted_parts:
         initial_necessity = int(part.ideal_stock_3hk) - int(part.processes[-1].stock)
-        current_necessity = part.ideal_stock_3hk
+        current_necessity = initial_necessity
         
+        if initial_necessity < 0:
+            continue
+
         # first pass: count quantity for each process
         neccesities = [0] * len(part.processes)
         for i, process in enumerate(part.processes[::-1]):
@@ -51,7 +57,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                         current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                         process_name=process.process_name,
                                         op=f"OP10",
-                                        quantity=initial_necessity,
+                                        quantity=round_to_nearest_upper_50(initial_necessity),
                                         tonnage=process.tonnage,
                                         tonnage_alternatives=process.tonnage_alternatives,
                                         material=part.material,
@@ -74,7 +80,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                     current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                         process_name=process.process_name,
                                         op=f"OP{op_id}0",
-                                        quantity=quantity,
+                                        quantity=round_to_nearest_upper_50(quantity),
                                         tonnage=process.tonnage,
                                         tonnage_alternatives=process.tonnage_alternatives,
                                         material=part.material,
@@ -89,7 +95,7 @@ def get_prioritized_tasks(parts, top_n=50, check_material_availability=True):
                 current_task = Task(part_name=f"{part.id} - {part.name} - {part.customer}",
                                     process_name=process.process_name,
                                     op=f"OP{op_id}0",
-                                    quantity=current_necessity,
+                                    quantity=round_to_nearest_upper_50(current_necessity),
                                     tonnage=process.tonnage,
                                     tonnage_alternatives=process.tonnage_alternatives,
                                     material=part.material,

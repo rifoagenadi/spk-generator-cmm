@@ -37,11 +37,11 @@ def export_stock_to_excel(df_parts_stock, df_materials_stock):
 
 def convert_pdf_to_image():
     proposed_spk_list = [f.split('.')[0] for f in os.listdir("outputs/proposed_spk") if f.endswith('.pdf')]
-    # poppler_path = r'C:\PROJECT CMM\poppler-24.02.0\Library\bin'
+    poppler_path = r'C:\PROJECT CMM\poppler-24.02.0\Library\bin'
     from pdf2image import convert_from_path
     for spk in proposed_spk_list:
-        images = convert_from_path(f"outputs/proposed_spk/{spk}.pdf")
-        # images = convert_from_path(f"outputs/proposed_spk/{spk}.pdf", poppler_path=poppler_path)
+        # images = convert_from_path(f"outputs/proposed_spk/{spk}.pdf")
+        images = convert_from_path(f"outputs/proposed_spk/{spk}.pdf", poppler_path=poppler_path)
         for image in images:
             image.save(f'outputs/proposed_spk/{spk.split('.')[0]}.jpg', 'JPEG')
 
